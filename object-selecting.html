@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>射线选择</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <script src="https://cdn.bootcdn.net/ajax/libs/three.js/r126/three.min.js"></script>
+    <script>
+      function rand(min, max) {
+        if (max === undefined) {
+          max = min;
+          min = 0;
+        }
+        return min + (max - min) * Math.random();
+      }
+
+      var mouse = new THREE.Vector2();
+
+      function onMouseMove(event) {
+        // 将鼠标位置归一化为设备坐标。x 和 y 方向的取值范围是 (-1 to +1)
+
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      }
+      window.addEventListener("mousemove", onMouseMove, false);
+      window.onload = function () {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(new THREE.Color(0xeeeedd, 1.0));
+        document.body.appendChild(renderer.domElement);
+
+        // 随机生成正方体
+
+        camera.position.set(0, 0, 30);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 1, 1).normalize();
+        scene.add(light);
+
+        for (let i = 0; i < 5; ++i) {
+          const geometry = new THREE.BoxGeometry();
+          const material = new THREE.MeshLambertMaterial({
+            color: Math.random() * 0xffffff,
+          });
+
+          const cube = new THREE.Mesh(geometry, material);
+          scene.add(cube);
+
+          cube.position.set(rand(-20, 20), rand(-20, 20), rand(-20, 20));
+          cube.rotation.set(rand(Math.PI), rand(Math.PI), 0);
+          cube.scale.set(rand(3, 6), rand(3, 6), rand(3, 6));
+        }
+        var raycaster = new THREE.Raycaster();
+
+        var pickedObject;
+        var pickedObjectSavedColor;
+        const PickHelper = function () {
+          if (pickedObject) {
+            pickedObject.material.emissive.setHex(pickedObjectSavedColor);
+          }
+          raycaster.setFromCamera(mouse, camera);
+          const intersects = raycaster.intersectObjects(scene.children);
+
+          for (let i = 0; i < intersects.length; i++) {
+            pickedObject = intersects[0].object;
+            pickedObjectSavedColor = pickedObject.material.emissive.getHex();
+            intersects[i].object.material.emissive.set(0xff0000);
+          }
+        };
+
+        const animate = function () {
+          PickHelper();
+          requestAnimationFrame(animate);
+
+          renderer.render(scene, camera);
+        };
+
+        animate();
+      };
+    </script>
+  </body>
+</html>
